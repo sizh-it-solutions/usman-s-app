@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Quiz App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      width: 500px;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 5px 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h2 {
+      color: #333;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #4CAF50;
+      color: white;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .option {
+      display: block;
+      margin: 8px 0;
+    }
+    .answer-box {
+      margin-top: 15px;
+      padding: 10px;
+      background: #eef6ff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Quiz App</h2>
+    <button onclick="generateQuestion()">Generate Question</button>
+    <div id="quiz"></div>
+    <div id="result"></div>
+    <div class="answer-box" id="answerBox">
+      <p id="brief"></p>
+      <button onclick="showDetailed()">View Detailed Explanation</button>
+      <p id="detailed" style="display:none;"></p>
+    </div>
+  </div>
+
+  <script>
+    let currentQuestion = null;
+
+    async function generateQuestion() {
+      const res = await fetch("/api/generate_question");
+      const data = await res.json();
+
+      currentQuestion = data;
+
+      let html = `<h3>${data.question}</h3>`;
+      data.options.forEach((opt, i) => {
+        html += `<label class="option">
+                   <input type="radio" name="option" value="${['A','B','C','D'][i]}"> ${opt}
+                 </label>`;
+      });
+      html += `<button onclick="submitAnswer()">Submit</button>`;
+      document.getElementById("quiz").innerHTML = html;
+      document.getElementById("result").innerHTML = "";
+      document.getElementById("answerBox").style.display = "none";
+    }
+
+    function submitAnswer() {
+      const selected = document.querySelector('input[name="option"]:checked');
+      if (!selected) {
+        alert("Please select an option!");
+        return;
+      }
+
+      const chosen = selected.value;
+      const correct = currentQuestion.correct_answer;
+
+      let result = (chosen === correct)
+        ? `<p style="color:green;">Correct Answer: ${correct}</p>`
+        : `<p style="color:red;">Wrong! Correct Answer: ${correct}</p>`;
+
+      result += `<button onclick="showAnswer()">Show Answer</button>`;
+
+      document.getElementById("result").innerHTML = result;
+    }
+
+    function showAnswer() {
+      document.getElementById("answerBox").style.display = "block";
+      document.getElementById("brief").innerText = currentQuestion.brief_solution;
+    }
+
+    function showDetailed() {
+      document.getElementById("detailed").style.display = "block";
+      document.getElementById("detailed").innerText = currentQuestion.detailed_explanation;
+    }
+  </script>
+</body>
+</html>
