@@ -25,7 +25,7 @@ QUESTIONS_FILE = "questions.json"
 if not os.path.exists(QUESTIONS_FILE):
     raise FileNotFoundError("questions.json file missing.")
 
-with open(QUESTIONS_FILE, "r") as f:
+with open(QUESTIONS_FILE, "r", encoding="utf-8") as f:
     questions = json.load(f)
 
 @app.get("/")
