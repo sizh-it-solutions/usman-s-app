@@ -20,9 +20,7 @@
       box-shadow: 0px 5px 15px rgba(0,0,0,0.1);
       text-align: center;
     }
-    h2 {
-      color: #333;
-    }
+    h2 { color: #333; }
     button {
       padding: 10px 20px;
       margin: 10px;
@@ -33,13 +31,8 @@
       color: white;
       font-size: 16px;
     }
-    button:hover {
-      background: #45a049;
-    }
-    .option {
-      display: block;
-      margin: 8px 0;
-    }
+    button:hover { background: #45a049; }
+    .option { display: block; margin: 8px 0; }
     .answer-box {
       margin-top: 15px;
       padding: 10px;
@@ -48,6 +41,7 @@
       border-radius: 8px;
       display: none;
     }
+    img { max-width: 50%; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -73,6 +67,12 @@
       currentQuestion = data;
 
       let html = `<h3>${data.question}</h3>`;
+
+      // ✅ agar image hai to dikhaye
+      if (data.image) {
+        html += `<img src="/static/images/${data.image}" alt="diagram">`;
+      }
+
       data.options.forEach((opt, i) => {
         html += `<label class="option">
                    <input type="radio" name="option" value="${['A','B','C','D'][i]}"> ${opt}
@@ -99,7 +99,6 @@
         : `<p style="color:red;">Wrong! Correct Answer: ${correct}</p>`;
 
       result += `<button onclick="showAnswer()">Show Answer</button>`;
-
       document.getElementById("result").innerHTML = result;
     }
 
