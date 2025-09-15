@@ -1,34 +1,29 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz App with Scroll to Top</title>
+  <title>Quiz App</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #f4f7fb;
-      margin: 0;
-      padding: 20px 0;
-      position: relative;
-      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px;
     }
-
     .container {
-      max-width: 500px;
+      width: 600px;
       background: white;
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0px 5px 15px rgba(0,0,0,0.1);
-      text-align: center;
-      margin: 0 auto 40px auto;
     }
-
-    h2 { color: #333; }
-
+    h2 { text-align: center; color: #333; }
     button {
       padding: 10px 20px;
-      margin: 10px;
+      margin: 10px 5px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
@@ -36,124 +31,79 @@
       color: white;
       font-size: 16px;
     }
-
     button:hover { background: #45a049; }
-
-    .option { display: block; margin: 8px 0; }
-
+    .option {
+      display: block;
+      text-align: left;   /* ✅ left aligned */
+      margin: 8px 0;
+    }
     .answer-box {
       margin-top: 15px;
       padding: 10px;
       background: #eef6ff;
       border: 1px solid #ccc;
       border-radius: 8px;
-      display: none;
     }
-
-    img { max-width: 50%; margin: 10px 0; }
-
-    .scroll-top {
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background: #4CAF50;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-
-    .scroll-top.show {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .scroll-top:hover {
-      background: #45a049;
-      transform: translateY(-3px);
-    }
-
-    .scroll-top svg {
-      width: 24px;
-      height: 24px;
-    }
+    img { max-width: 100%; margin: 10px 0; }
+    #quiz { margin-top: 20px; }
   </style>
 </head>
 <body>
-  <!-- Scroll to top button -->
-  <div class="scroll-top" id="scrollTop">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white">
-      <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
-    </svg>
-  </div>
-
-  <div class="wrapper">
-    <div class="container">
-      <h2>Quiz App</h2>
-      <button onclick="generateQuestion()">Generate Question</button>
-      <div id="quiz"></div>
-      <div id="result"></div>
-
-      <div class="answer-box" id="answerBox">
-        <p id="brief" style="display:none;"></p>
-        <button id="detailedBtn" onclick="showDetailed()" style="display:none;">
-          View Detailed Explanation
-        </button>
-        <p id="detailed" style="display:none;"></p>
-      </div>
-    </div>
+  <div class="container">
+    <h2>Quiz App</h2>
+    <div id="topics"></div>
+    <div id="quiz"></div>
   </div>
 
   <script>
     let currentQuestion = null;
+    let currentTopic = null;
 
-    // Scroll to top
-    const scrollTopBtn = document.getElementById('scrollTop');
-    window.addEventListener('scroll', () => {
-      if (window.pageYOffset > 300) {
-        scrollTopBtn.classList.add('show');
-      } else {
-        scrollTopBtn.classList.remove('show');
-      }
-    });
-    scrollTopBtn.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Quiz logic
-    async function generateQuestion() {
-      const res = await fetch("/api/generate_question");
+    // ✅ Load topics dynamically
+    async function loadTopics() {
+      const res = await fetch("/api/topics");
       const data = await res.json();
 
+      let html = "<h3>Select a Topic</h3>";
+      data.forEach(t => {
+        html += `<button onclick="startQuiz('${t.id}')">${t.title}</button>`;
+      });
+      document.getElementById("topics").innerHTML = html;
+    }
+
+    async function startQuiz(topicId) {
+      currentTopic = topicId;
+      document.getElementById("quiz").innerHTML = `
+        <button onclick="generateQuestion()">Generate Question</button>
+      `;
+    }
+
+    async function generateQuestion() {
+      if (!currentTopic) return;
+
+      const res = await fetch(`/api/generate_question/${currentTopic}`);
+      const data = await res.json();
       currentQuestion = data;
 
       let html = `<h3>${data.question}</h3>`;
+
       if (data.image) {
         html += `<img src="/static/images/${data.image}" alt="diagram">`;
       }
 
+      // ✅ Options left aligned + new line
       data.options.forEach((opt, i) => {
         html += `<label class="option">
                    <input type="radio" name="option" value="${['A','B','C','D'][i]}"> ${opt}
                  </label>`;
       });
+
       html += `<button onclick="submitAnswer()">Submit</button>`;
 
+      // ✅ Generate button for next question
+      html += `<button onclick="generateQuestion()">Next Question</button>`;
+
       document.getElementById("quiz").innerHTML = html;
-      document.getElementById("result").innerHTML = "";
-      document.getElementById("answerBox").style.display = "none";
-      document.getElementById("brief").style.display = "none";
-      document.getElementById("detailed").style.display = "none";
-      document.getElementById("detailedBtn").style.display = "none";
     }
 
     function submitAnswer() {
@@ -167,25 +117,24 @@
       const correct = currentQuestion.correct_answer;
 
       let result = (chosen === correct)
-        ? `<p style="color:green;">Correct Answer: ${correct}</p>`
-        : `<p style="color:red;">Wrong! Correct Answer: ${correct}</p>`;
+        ? `<p style="color:green;">✅ Correct! (${correct})</p>`
+        : `<p style="color:red;">❌ Wrong! Correct Answer: ${correct}</p>`;
 
-      
-      result += `<button onclick="showAnswer()">Show Answer</button>`;
-      document.getElementById("result").innerHTML = result;
+      // ✅ Show explanation just below
+      result += `
+        <div class="answer-box">
+          <p><strong>Brief:</strong> ${currentQuestion.brief_solution}</p>
+          <details>
+            <summary>View Detailed Explanation</summary>
+            <p>${currentQuestion.detailed_explanation}</p>
+          </details>
+        </div>
+      `;
+
+      document.getElementById("quiz").innerHTML += result;
     }
 
-    function showAnswer() {
-      document.getElementById("answerBox").style.display = "block";
-      document.getElementById("brief").innerText = currentQuestion.brief_solution;
-      document.getElementById("brief").style.display = "block";
-      document.getElementById("detailedBtn").style.display = "inline-block";
-    }
-
-    function showDetailed() {
-      document.getElementById("detailed").innerText = currentQuestion.detailed_explanation;
-      document.getElementById("detailed").style.display = "block";
-    }
+    loadTopics();
   </script>
 </body>
 </html>
